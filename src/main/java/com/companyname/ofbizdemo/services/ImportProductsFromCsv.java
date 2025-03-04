@@ -25,7 +25,7 @@ import java.util.Map;
 public class ImportProductsFromCsv {
     public static final String module = ImportProductsFromCsv.class.getName();
 
-    public static Map<String, Object> ImportProductsFromCsv(DispatchContext dctx, Map<String, ?> context) {
+    public static Map<String, Object> importProductsFromCsv(DispatchContext dctx, Map<String, ?> context) {
         Debug.logInfo("Starting CSV import process", module);
 
         boolean beganTransaction = false;
@@ -35,20 +35,18 @@ public class ImportProductsFromCsv {
         Map<String, Object> result = ServiceUtil.returnSuccess();
 
         try {
-            beganTransaction = TransactionUtil.begin();
-            Debug.logInfo("Transaction started", module);
-
             BufferedReader reader = new BufferedReader(new FileReader(csvFilePath, StandardCharsets.UTF_8));
             String line;
             boolean isHeader = true;
             Map<String, Integer> headerIndexMap = null;
 
-            GenericValue permUserLogin = EntityQuery.use(delegator)
+//            String userLogin = (String) context.get("userLogin");
+            GenericValue userLogin = EntityQuery.use(delegator)
                     .from("UserLogin")
                     .where("userLoginId", "system")
                     .queryOne();
 
-            if (permUserLogin == null) {
+            if (userLogin == null) {
                 Debug.logError("System userLogin not found!", module);
                 return ServiceUtil.returnError("System userLogin not found!");
             }
@@ -86,7 +84,7 @@ public class ImportProductsFromCsv {
 
                 Timestamp fromDate = null;
 
-                if (fromDateStr != null && !fromDateStr.isEmpty()) {
+                if (fromDateStr != null) {
                     try {
                         SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
                         fromDate = new Timestamp(sdf.parse(fromDateStr).getTime());
@@ -122,7 +120,7 @@ public class ImportProductsFromCsv {
                                 "productId", productId,
                                 "productTypeId", productTypeId,
                                 "internalName", internalName,
-                                "userLogin", permUserLogin
+                                "userLogin", userLogin
                         ));
                     }
                 } catch (GenericServiceException e) {
@@ -146,7 +144,7 @@ public class ImportProductsFromCsv {
                         dispatcher.runSync("createProdCatalog", UtilMisc.toMap(
                                 "prodCatalogId", prodCatalogId,
                                 "catalogName", catalogName,
-                                "userLogin", permUserLogin
+                                "userLogin", userLogin
                         ));
                     } else {
                         Debug.logInfo("Updating existing Product Catalog with ID: " + prodCatalogId, module);
@@ -178,7 +176,7 @@ public class ImportProductsFromCsv {
                                 "primaryParentCategoryId", primaryParentCategoryId,
                                 "categoryName", categoryName,
                                 "description", description,
-                                "userLogin", permUserLogin
+                                "userLogin", userLogin
                         ));
                     } else {
                         Debug.logInfo("Updating existing Product Category with ID: " + productCategoryId, module);
@@ -203,7 +201,7 @@ public class ImportProductsFromCsv {
                             "productCategoryId", productCategoryId,
                             "prodCatalogCategoryTypeId", prodCatalogCategoryTypeId,
                             "fromDate", fromDate,
-                            "userLogin", permUserLogin
+                            "userLogin", userLogin
                     ));
                 } catch (GenericServiceException e) {
                     Debug.logError("Unable to create product catalog category: " + e.getMessage(), module);
@@ -227,7 +225,7 @@ public class ImportProductsFromCsv {
                                 "productFeatureId", productFeatureId,
                                 "productFeatureTypeId", productFeatureTypeId,
                                 "description", description,
-                                "userLogin", permUserLogin
+                                "userLogin", userLogin
                         ));
                     } else {
                         Debug.logInfo("Updating existing Product Feature with ID: " + productFeatureId, module);
@@ -254,7 +252,7 @@ public class ImportProductsFromCsv {
                             "price", price,
                             "productStoreGroupId", productStoreGroupId,
                             "fromDate", fromDate,
-                            "userLogin", permUserLogin
+                            "userLogin", userLogin
                     ));
                 } catch (GenericServiceException e) {
                     Debug.logError("Unable to create product price: " + e.getMessage(), module);
@@ -272,7 +270,7 @@ public class ImportProductsFromCsv {
                             "productFeatureId", productFeatureId,
                             "productFeatureApplTypeId", productFeatureApplTypeId,
                             "fromDate", fromDate,
-                            "userLogin", permUserLogin
+                            "userLogin", userLogin
                     ));
                 } catch (GenericServiceException e) {
                     Debug.logError("Unable to create product feature appl: " + e.getMessage(), module);
@@ -289,7 +287,7 @@ public class ImportProductsFromCsv {
                             "productStoreId", productStoreId,
                             "prodCatalogId", prodCatalogId,
                             "fromDate", fromDate,
-                            "userLogin", permUserLogin
+                            "userLogin", userLogin
                     ));
                 } catch (GenericServiceException e) {
                     Debug.logError("Unable to create product store catalog: " + e.getMessage(), module);
@@ -306,7 +304,7 @@ public class ImportProductsFromCsv {
                             "productCategoryId", productCategoryId,
                             "productId", productId,
                             "fromDate", fromDate,
-                            "userLogin", permUserLogin
+                            "userLogin", userLogin
                     ));
                 } catch (GenericServiceException e) {
                     Debug.logError("Unable to create product category member: " + e.getMessage(), module);

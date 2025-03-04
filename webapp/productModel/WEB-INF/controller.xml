@@ -55,7 +55,7 @@ under the License.
     </request-map>
     <request-map uri="importProductsEvent">
         <security https="false" auth="false"/>
-        <event type="service" invoke="ImportProductsFromCsv"/>
+        <event type="service" invoke="importProductsFromCsv"/>
         <response name="success" type="view" value="main"/>
     </request-map>
     <!-- View Mappings -->
