@@ -29,13 +29,7 @@ under the License.
             Dummy service to prevent empty files and syntax error - Remove when the 1st real service will be added here 
         </description>
     </service>
-    <service name="ImportCsv" engine="java" location="com.companyname.ofbizdemo.services.ImportCsv" invoke="importCsv">
+    <service name="ImportProductsFromCsv" engine="java" location="com.companyname.ofbizdemo.services.ImportProductsFromCsv" invoke="ImportProductsFromCsv">
         <attribute name="csvFilePath" type="String" mode="IN" optional="false"/>
     </service>
-
-    <service name="ProductCsv" engine="java" location="com.companyname.ofbizdemo.services.ProductCsv" invoke="productCsv">
-        <attribute name="csvFilePath" type="String" mode="IN" optional="false"/>
-    </service>
-
-
 </services>
