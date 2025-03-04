@@ -101,23 +101,39 @@ public class ImportProductsFromCsv {
                     return ServiceUtil.returnError("ProductId is required and cannot be empty.");
                 }
                 try {
-                    Debug.logInfo("Creating Product with ID: " + productId, module);
-                    dispatcher.runSync("createProduct", UtilMisc.toMap(
-                            "productId", productId,
-                            "productTypeId", productTypeId,
-                            "internalName", internalName,
-                            "userLogin", permUserLogin
-                    ));
+                    Debug.logInfo("Checking if Product with ID: " + productId + " exists", module);
+
+                    GenericValue existingProduct = EntityQuery.use(delegator)
+                            .from("Product")
+                            .where("productId", productId)
+                            .queryOne();
+
+                    if (existingProduct != null) {
+                        Debug.logInfo("Product with ID: " + productId + " already exists. Updating instead of creating.", module);
+
+                        existingProduct.set("productTypeId", productTypeId);
+                        existingProduct.set("internalName", internalName);
+                        existingProduct.store();
+
+                        Debug.logInfo("Product with ID: " + productId + " updated successfully.", module);
+                    } else {
+                        Debug.logInfo("Creating new Product with ID: " + productId, module);
+                        dispatcher.runSync("createProduct", UtilMisc.toMap(
+                                "productId", productId,
+                                "productTypeId", productTypeId,
+                                "internalName", internalName,
+                                "userLogin", permUserLogin
+                        ));
+                    }
                 } catch (GenericServiceException e) {
-                    Debug.logError("Unable to create product: " + e.getMessage(), module);
+                    Debug.logError("Unable to create/update product: " + e.getMessage(), module);
                     try {
-                        TransactionUtil.rollback(beganTransaction, "Error creating product", e);
+                        TransactionUtil.rollback(beganTransaction, "Error creating/updating product", e);
                     } catch (GenericTransactionException rollbackException) {
                         Debug.logError("Transaction rollback failed: " + rollbackException.getMessage(), module);
                     }
-                    return ServiceUtil.returnError("Error creating product: " + e.getMessage());
+                    return ServiceUtil.returnError("Error creating/updating product: " + e.getMessage());
                 }
-
                 try {
                     Debug.logInfo("Checking if Product Catalog exists with ID: " + prodCatalogId, module);
                     GenericValue existingProdCatalog = EntityQuery.use(delegator)
@@ -137,7 +153,7 @@ public class ImportProductsFromCsv {
                         existingProdCatalog.setString("catalogName", catalogName);
                         existingProdCatalog.store();
                     }
-                } catch( GenericServiceException e) {
+                } catch (GenericServiceException e) {
                     Debug.logError("Error handling product catalog: " + e.getMessage(), module);
                     try {
                         TransactionUtil.rollback(beganTransaction, "Error handling product catalog", e);
@@ -179,6 +195,7 @@ public class ImportProductsFromCsv {
                     }
                     return ServiceUtil.returnError("Error handling product category: " + e.getMessage());
                 }
+
                 try {
                     Debug.logInfo("Creating Product Catalog Category with ID: " + prodCatalogCategoryTypeId, module);
                     dispatcher.runSync("addProductCategoryToProdCatalog", UtilMisc.toMap(
@@ -236,7 +253,7 @@ public class ImportProductsFromCsv {
                             "currencyUomId", currencyUomId,
                             "price", price,
                             "productStoreGroupId", productStoreGroupId,
-                            "fromDate",  fromDate,
+                            "fromDate", fromDate,
                             "userLogin", permUserLogin
                     ));
                 } catch (GenericServiceException e) {
@@ -254,7 +271,7 @@ public class ImportProductsFromCsv {
                             "productId", productId,
                             "productFeatureId", productFeatureId,
                             "productFeatureApplTypeId", productFeatureApplTypeId,
-                            "fromDate",  fromDate,
+                            "fromDate", fromDate,
                             "userLogin", permUserLogin
                     ));
                 } catch (GenericServiceException e) {
@@ -271,7 +288,7 @@ public class ImportProductsFromCsv {
                     dispatcher.runSync("createProductStoreCatalog", UtilMisc.toMap(
                             "productStoreId", productStoreId,
                             "prodCatalogId", prodCatalogId,
-                            "fromDate",  fromDate,
+                            "fromDate", fromDate,
                             "userLogin", permUserLogin
                     ));
                 } catch (GenericServiceException e) {
@@ -284,26 +301,28 @@ public class ImportProductsFromCsv {
                     return ServiceUtil.returnError("Error creating product store catalog: " + e.getMessage());
                 }
                 try {
-                Debug.logInfo("Creating Product Category Member with ID: " + productCategoryId, module);
-                dispatcher.runSync("addProductToCategory", UtilMisc.toMap(
-                        "productCategoryId", productCategoryId,
-                        "productId", productId,
-                        "fromDate",  fromDate,
-                        "userLogin", permUserLogin
-                ));
-            } catch (GenericServiceException e) {
-                Debug.logError("Unable to create product category member: " + e.getMessage(), module);
-                try {
-                    TransactionUtil.rollback(beganTransaction, "Error creating product category member", e);
-                } catch (GenericTransactionException rollbackException) {
-                    Debug.logError("Transaction rollback failed: " + rollbackException.getMessage(), module);
+                    Debug.logInfo("Creating Product Category Member with ID: " + productCategoryId, module);
+                    dispatcher.runSync("addProductToCategory", UtilMisc.toMap(
+                            "productCategoryId", productCategoryId,
+                            "productId", productId,
+                            "fromDate", fromDate,
+                            "userLogin", permUserLogin
+                    ));
+                } catch (GenericServiceException e) {
+                    Debug.logError("Unable to create product category member: " + e.getMessage(), module);
+                    try {
+                        TransactionUtil.rollback(beganTransaction, "Error creating product category member", e);
+                    } catch (GenericTransactionException rollbackException) {
+                        Debug.logError("Transaction rollback failed: " + rollbackException.getMessage(), module);
+                    }
+                    return ServiceUtil.returnError("Error creating product category member: " + e.getMessage());
                 }
-                return ServiceUtil.returnError("Error creating product category member: " + e.getMessage());
             }
-        }
             reader.close();
             TransactionUtil.commit(beganTransaction);
             Debug.logInfo("CSV import completed successfully", module);
+            result.put("message", "Files imported successfully");
+            Debug.logInfo("Files imported successfully", module);
         } catch (Exception e) {
             Debug.logError("Error importing CSV: " + e.getMessage(), module);
             try {
