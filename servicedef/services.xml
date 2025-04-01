@@ -32,4 +32,10 @@ under the License.
     <service name="ImportProductsFromCsv" engine="java" location="com.companyname.ofbizdemo.services.ImportProductsFromCsv" require-new-transaction="true" transaction-timeout="20" invoke="importProductsFromCsv">
         <attribute name="csvFilePath" type="String" mode="IN" optional="false"/>
     </service>
+    <service name="ImportPiesProduct" engine="java"
+             location="com.companyname.ofbizdemo.services.ImportPiesProduct"
+             require-new-transaction="true" transaction-timeout="20"
+             invoke="importPiesProduct">
+        <attribute name="filePath" type="String" mode="IN" optional="false"/>
+    </service>
 </services>
